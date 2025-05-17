@@ -1,71 +1,224 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import Header from '../components/Header';
-import zipper from '../assets/zipper.png';
-import bonecas from '../assets/personagens-footer.png';
+import {
+  View,
+  Text,
+  Image,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-export default function DollInfoScreen({ route, navigation }) {
-  const { doll } = route.params;
+export default function DollInfoScreen({ route }) {
+  const { doll, onUpdate, onDelete } = route.params; // Receber callbacks da tela anterior
+  const navigation = useNavigation();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedDoll, setEditedDoll] = useState({ ...doll });
 
   const handleDelete = () => {
-    Alert.alert('Confirmação', 'Tem certeza que deseja excluir esta boneca?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Excluir', style: 'destructive', onPress: () => navigation.goBack() }
-    ]);
+    Alert.alert(
+      'Tem certeza que deseja excluir?',
+      '',
+      [
+        { text: 'Não', style: 'cancel' },
+        {
+          text: 'Sim',
+          onPress: () => {
+            if (onDelete) onDelete(doll.numeroSerie); // CORRIGIDO AQUI
+            navigation.goBack();
+          }
+        }
+      ]
+    );
   };
 
-  return (
-    <View style={styles.container}>
-      <Header />
-      <Image source={zipper} style={styles.zipper} />
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
 
-      <View style={styles.box}>
-        <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.closeText}>X</Text>
+  const handleSave = () => {
+    if (onUpdate) onUpdate(editedDoll);
+    setIsEditing(false);
+    navigation.goBack();
+  };
+
+  const renderField = (label, key) => (
+    <>
+      <Text style={styles.label}>{label}</Text>
+      {isEditing ? (
+        <TextInput
+          style={styles.input}
+          value={editedDoll[key]}
+          onChangeText={(text) => setEditedDoll({ ...editedDoll, [key]: text })}
+        />
+      ) : (
+        <Text style={styles.value}>{doll[key]}</Text>
+      )}
+    </>
+  );
+
+  if (!doll) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: 'white' }}>Erro: boneca não encontrada.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      {/* Cabeçalho */}
+      <View style={styles.header}>
+        <Image
+          source={require('../assets/header-logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.headerText}>MONSTERCOLLECTION</Text>
+      </View>
+
+      <View style={styles.modal}>
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.closeText}>×</Text>
         </TouchableOpacity>
 
-        <Image source={{ uri: doll.imagem }} style={styles.dollImage} />
+        <Image source={{ uri: editedDoll.url }} style={styles.image} />
 
-        <Text style={styles.label}>Nome: {doll.nome || '—'}</Text>
-        <Text style={styles.label}>Personagem: {doll.personagem || '—'}</Text>
-        <Text style={styles.label}>Linha/Coleção: {doll.colecao || '—'}</Text>
-        <Text style={styles.label}>Número de Série: {doll.numeroSerie || '—'}</Text>
-        <Text style={styles.label}>Ano de Lançamento: {doll.ano || '—'}</Text>
-        <Text style={styles.label}>Fabricante: {doll.fabricante || '—'}</Text>
+        {renderField('Nome da Boneca:', 'nome')}
+        {renderField('Imagem URL:', 'url')}
+        {renderField('Personagem:', 'personagem')}
+        {renderField('Linha/Coleção:', 'linha')}
+        {renderField('Número de Série:', 'numeroSerie')}
+        {renderField('Ano de Lançamento:', 'ano')}
+        {renderField('Fabricante:', 'fabricante')}
 
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('AddDoll', { doll })}>
-            <Text style={styles.btnText}>Editar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-            <Text style={styles.btnText}>Excluir</Text>
+        <View style={styles.buttonContainer}>
+          {isEditing ? (
+            <TouchableOpacity style={styles.button} onPress={handleSave}>
+              <Text style={styles.buttonText}>Salvar</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={handleEdit}>
+              <Text style={styles.buttonText}>Editar</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity style={styles.button} onPress={handleDelete}>
+            <Text style={styles.buttonText}>Excluir</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <Image source={bonecas} style={styles.bottomImage} />
-    </View>
+      <Image
+        source={require('../assets/personagens-footer.png')}
+        style={styles.footerImage}
+        resizeMode="contain"
+      />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ffe4f2' },
-  zipper: { width: '100%', height: 60, resizeMode: 'contain', marginBottom: 10 },
-  box: {
-    backgroundColor: '#fff',
-    margin: 20,
-    borderRadius: 10,
-    padding: 15,
-    elevation: 3,
-    position: 'relative'
+  scrollContainer: {
+    backgroundColor: '#000',
+    alignItems: 'center',
+    paddingBottom: 100,
+    paddingTop: 180,
   },
-  closeBtn: { position: 'absolute', top: 10, right: 10 },
-  closeText: { fontSize: 20, color: 'red' },
-  dollImage: { width: 100, height: 100, alignSelf: 'center', marginVertical: 10 },
-  label: { fontSize: 14, marginVertical: 3 },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 15 },
-  editBtn: { backgroundColor: '#4CAF50', padding: 10, borderRadius: 8 },
-  deleteBtn: { backgroundColor: '#f44336', padding: 10, borderRadius: 8 },
-  btnText: { color: 'white', fontWeight: 'bold' },
-  bottomImage: { width: '100%', height: 100, resizeMode: 'contain', marginTop: 20 }
+  header: {
+    paddingTop: 40,
+    backgroundColor: '#e6007e',
+    width: '100%',
+    paddingVertical: 20,
+    alignItems: 'center',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    position: 'absolute',
+  },
+  logo: {
+    width: 60,
+    height: 50,
+    marginBottom: 2,
+    borderRadius: 10
+  },
+  headerText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    letterSpacing: 1
+  },
+  modal: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '85%',
+    borderWidth: 2,
+    borderColor: '#00aaff',
+    alignItems: 'center',
+    position: 'relative',
+    marginTop: 20
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10
+  },
+  closeText: {
+    fontSize: 24,
+    color: '#00aaff'
+  },
+  image: {
+    width: 100,
+    height: 180,
+    marginBottom: 15,
+    resizeMode: 'contain'
+  },
+  label: {
+    fontWeight: 'bold',
+    color: '#ff1493',
+    alignSelf: 'flex-start',
+    marginTop: 5
+  },
+  value: {
+    color: '#000',
+    marginBottom: 5,
+    alignSelf: 'flex-start'
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 5,
+    alignSelf: 'stretch',
+    marginBottom: 5,
+    color: '#000'
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    marginTop: 20,
+    gap: 20
+  },
+  button: {
+    backgroundColor: '#e6f0ff',
+    borderWidth: 1,
+    borderColor: '#00aaff',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 20
+  },
+  buttonText: {
+    color: '#000',
+    fontWeight: 'bold'
+  },
+  footerImage: {
+    width: '100%',
+    height: 120,
+    marginTop: 40
+  }
 });
