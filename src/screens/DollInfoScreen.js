@@ -12,7 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 
 export default function DollInfoScreen({ route }) {
-  const { doll, onUpdate, onDelete } = route.params; // Receber callbacks da tela anterior
+  const { doll, onUpdate, onDelete } = route.params; 
   const navigation = useNavigation();
   const [isEditing, setIsEditing] = useState(false);
   const [editedDoll, setEditedDoll] = useState({ ...doll });
@@ -26,7 +26,7 @@ export default function DollInfoScreen({ route }) {
         {
           text: 'Sim',
           onPress: () => {
-            if (onDelete) onDelete(doll.numeroSerie); // CORRIGIDO AQUI
+            if (onDelete) onDelete(doll.numeroSerie); 
             navigation.goBack();
           }
         }
@@ -69,7 +69,7 @@ export default function DollInfoScreen({ route }) {
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
-      {/* Cabeçalho */}
+      
       <View style={styles.header}>
         <Image
           source={require('../assets/header-logo.png')}
